@@ -33,6 +33,7 @@ type uplinkPayload struct {
 	FCnt          uint32        `json:"fCnt"`
 	FPort         uint32        `json:"fPort"`
 	RXInfo        []rxInfo      `json:"rxInfo"`
+	TXInfo        txInfo        `json:"txInfo"`
 }
 
 type rxInfo struct {
@@ -40,6 +41,10 @@ type rxInfo struct {
 	RSSI      int32         `json:"rssi"`
 	LoRaSNR   float64       `json:"loRaSNR"`
 	Location  location      `json:"location"`
+}
+
+type txInfo struct {
+	Frequency int `json:"frequency"`
 }
 
 type location struct {
@@ -96,19 +101,22 @@ func (i *Integration) SendDataUp(ctx context.Context, vars map[string]string, pl
 		Data:          pl.Data,
 		FCnt:          pl.FCnt,
 		FPort:         pl.FPort,
+		TXInfo: txInfo{
+			Frequency: int(pl.GetTxInfo().GetFrequency()),
+		},
 	}
 	copy(up.DevEUI[:], pl.DevEui)
 
 	for i := range pl.RxInfo {
 		ri := rxInfo{
-			RSSI:    pl.RxInfo[i].Rssi,
-			LoRaSNR: pl.RxInfo[i].LoraSnr,
+			RSSI:    pl.RxInfo[i].GetRssi(),
+			LoRaSNR: pl.RxInfo[i].GetLoraSnr(),
 			Location: location{
-				Latitude:  pl.RxInfo[i].GetLocation().Latitude,
-				Longitude: pl.RxInfo[i].GetLocation().Longitude,
+				Latitude:  pl.RxInfo[i].GetLocation().GetLatitude(),
+				Longitude: pl.RxInfo[i].GetLocation().GetLongitude(),
 			},
 		}
-		copy(ri.GatewayID[:], pl.RxInfo[i].GatewayId)
+		copy(ri.GatewayID[:], pl.RxInfo[i].GetGatewayId())
 
 		up.RXInfo = append(up.RXInfo, ri)
 	}
